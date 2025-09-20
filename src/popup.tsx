@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useSettings } from "./store/settingsStore"
+import type { YouTubeVideoMetadata } from "./types/youtube"
 
 import "./styles.css"
 
@@ -15,7 +16,59 @@ function IndexPopup() {
   const [selectedVideo, setSelectedVideo] = useState("")
   const [isYouTubeVideo, setIsYouTubeVideo] = useState(false)
   const [videoTitle, setVideoTitle] = useState("")
+  const [videoMetadata, setVideoMetadata] = useState<YouTubeVideoMetadata | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [metadataError, setMetadataError] = useState<string | null>(null)
+
+  // Extract YouTube video metadata from content script
+  const extractVideoMetadata = async (tabId: number, url: string, maxRetries: number = 3) => {
+    try {
+      setMetadataError(null)
+
+      // Check if chrome.tabs is available
+      if (typeof chrome === 'undefined' || !chrome.tabs) {
+        throw new Error('Chrome tabs API not available')
+      }
+
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await new Promise<any>((resolve, reject) => {
+            chrome.tabs.sendMessage(tabId, {
+              action: 'extractVideoMetadata'
+            }, (response) => {
+              if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message))
+              } else {
+                resolve(response)
+              }
+            })
+          })
+
+          if (response && response.success) {
+            setVideoMetadata(response.data)
+            setVideoTitle(response.data.title)
+            return // Success, exit the retry loop
+          } else {
+            const errorMessage = response?.error || 'Failed to extract video metadata'
+            throw new Error(errorMessage)
+          }
+        } catch (error) {
+          console.warn(`[CommentsSummarizer]: Metadata extraction attempt ${attempt} failed:`, error)
+
+          // If this isn't the last attempt, wait before retrying
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          } else {
+            throw error
+          }
+        }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      setMetadataError(errorMessage)
+      console.error('[CommentsSummarizer]: Error communicating with content script:', error)
+    }
+  }
 
   // Detect YouTube video
   useEffect(() => {
@@ -34,12 +87,30 @@ function IndexPopup() {
 
             if (videoId) {
               setSelectedVideo(url)
-              // In a real implementation, you might fetch video title from YouTube API
-              setVideoTitle(`YouTube Video (${videoId.substring(0, 8)}...)`)
+              setVideoTitle(`Loading video info...`)
+
+              // Check if content script is available before trying to extract metadata
+              chrome.tabs.get(tabs[0].id, (tab) => {
+                if (chrome.runtime.lastError) {
+                  console.error('[CommentsSummarizer]: Error getting tab:', chrome.runtime.lastError)
+                  setMetadataError('Could not access current tab')
+                  return
+                }
+
+                // Try to extract metadata, with fallback to basic info
+                extractVideoMetadata(tabs[0].id, url).catch(() => {
+                  // Fallback: show basic info if content script fails
+                  console.log('[CommentsSummarizer]: Content script not available, using fallback')
+                  setVideoTitle(`YouTube Video (${videoId.substring(0, 8)}...)`)
+                  setMetadataError('Content script not loaded - showing basic info')
+                })
+              })
             }
           } else {
             setSelectedVideo(url)
             setVideoTitle("Not a YouTube video")
+            setVideoMetadata(null)
+            setMetadataError(null)
           }
         }
       })
@@ -54,9 +125,9 @@ function IndexPopup() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000))
       // In real implementation, call your summarization API here
-      console.log('Summarizing comments for:', selectedVideo)
+      console.log('[CommentsSummarizer]: Summarizing comments for:', selectedVideo)
     } catch (error) {
-      console.error('Error summarizing:', error)
+      console.error('[CommentsSummarizer]: Error summarizing:', error)
     } finally {
       setIsProcessing(false)
     }
@@ -75,9 +146,31 @@ function IndexPopup() {
             const videoId = url.includes('youtube.com/watch')
               ? url.split('v=')[1]?.split('&')[0]
               : url.split('youtu.be/')[1]?.split('?')[0]
-            setVideoTitle(`YouTube Video (${videoId?.substring(0, 8)}...)`)
+
+            if (videoId) {
+              setVideoTitle(`Loading video info...`)
+
+              // Check if content script is available before trying to extract metadata
+              chrome.tabs.get(tabs[0].id, (tab) => {
+                if (chrome.runtime.lastError) {
+                  console.error('[CommentsSummarizer]: Error getting tab:', chrome.runtime.lastError)
+                  setMetadataError('Could not access current tab')
+                  return
+                }
+
+                // Try to extract metadata, with fallback to basic info
+                extractVideoMetadata(tabs[0].id, url).catch(() => {
+                  // Fallback: show basic info if content script fails
+                  console.log('[CommentsSummarizer]: Content script not available, using fallback')
+                  setVideoTitle(`YouTube Video (${videoId.substring(0, 8)}...)`)
+                  setMetadataError('Content script not loaded - showing basic info')
+                })
+              })
+            }
           } else {
             setVideoTitle("Not a YouTube video")
+            setVideoMetadata(null)
+            setMetadataError(null)
           }
         }
       })
@@ -117,7 +210,7 @@ function IndexPopup() {
       <div className={`mb-4 p-4 rounded-lg border transition-colors ${
         darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
       }`}>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             {isYouTubeVideo ? (
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -125,7 +218,7 @@ function IndexPopup() {
               <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
             )}
             <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Current Page
+              Current Video
             </span>
           </div>
           <button
@@ -140,10 +233,82 @@ function IndexPopup() {
             </svg>
           </button>
         </div>
-        <p className={`text-xs break-all ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          {selectedVideo || "No page selected"}
-        </p>
-        <div className="flex items-center mt-2">
+
+        {metadataError ? (
+          <div className="mb-3">
+            <div className={`p-2 rounded text-sm ${
+              darkMode ? 'bg-red-900/20 text-red-300 border border-red-700' : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              <div className="flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {metadataError}
+              </div>
+            </div>
+          </div>
+        ) : videoMetadata ? (
+          <div className="space-y-3">
+            {/* Video Title */}
+            <div>
+              <h3 className={`text-sm font-semibold mb-1 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                {videoMetadata.title}
+              </h3>
+            </div>
+
+            {/* Channel Info */}
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <a
+                href={videoMetadata.channelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`text-sm hover:underline ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
+              >
+                {videoMetadata.channelName}
+              </a>
+            </div>
+
+            {/* Metadata Row */}
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-3">
+                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
+                  📅 {videoMetadata.publishedDate}
+                </span>
+                <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
+                  👁️ {videoMetadata.views}
+                </span>
+              </div>
+              <a
+                href={videoMetadata.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs transition-colors ${
+                  darkMode
+                    ? 'text-blue-400 hover:text-blue-300 hover:bg-gray-700'
+                    : 'text-blue-600 hover:text-blue-700 hover:bg-gray-200'
+                }`}
+                title="Open video"
+              >
+                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Open
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center py-4">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100"></div>
+            <span className={`ml-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Loading video info...
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center mt-3">
           <span className={`px-2 py-1 text-xs rounded-full ${
             isYouTubeVideo
               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
