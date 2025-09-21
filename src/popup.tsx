@@ -289,6 +289,15 @@ function IndexPopup() {
               </SelectContent>
             </Select>
           </label>
+
+          <div className="mt-1 flex flex-col gap-1">
+            <button className="flex items-center py-1 rounded-lg transition-colors text-primary hover:text-secondary">
+              <span>Report a wrong summarization</span>
+            </button>
+            <button className="flex items-center py-1 rounded-lg transition-colors text-primary hover:text-secondary">
+              <span>Report an issue</span>
+            </button>
+          </div>
         </CardContent>
       </Card>
 
@@ -507,8 +516,27 @@ function IndexPopup() {
       </div>
 
       {/* Footer */}
-      <div className="mt-4 text-center text-muted-foreground">
-        <p className="text-xs">v0.0.1 • Made with ❤️ by BNN</p>
+      <div className="mt-4 flex flex-col gap-2 items-center">
+        <div className="text-center text-muted-foreground">
+          <p className="text-xs">v0.0.1 • Made with ❤️ by BNN</p>
+        </div>
+        <div className="flex items-center justify-center flex-wrap gap-2">
+          <a
+            href="https://www.buymeacoffee.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-muted-foreground hover:text-primary hover:underline">
+            Privacy Policy
+          </a>
+          <span className="text-xs text-muted-foreground">&middot;</span>
+          <a
+            href="https://www.buymeacoffee.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-muted-foreground hover:text-primary hover:underline">
+            Terms of Service
+          </a>
+        </div>
       </div>
     </div>
   )
