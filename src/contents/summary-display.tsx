@@ -90,9 +90,10 @@ export const config: PlasmoCSConfig = {
 const SummaryDisplay = () => {
   const [commentsSummary, setCommentsSummary] = useState<string | null>(null)
   const [toneRating, setToneRating] = useState<ToneRating | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [settings, setSettings] = useState<ContentScriptSettings | null>(null)
+  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null)
 
   const [hailingFrequency] = useStorage("hailing")
 
@@ -122,153 +123,210 @@ const SummaryDisplay = () => {
   }, [])
 
   // Extract video ID from current URL
-  const getVideoId = (): string | null => {
+  const getVideoId = useCallback((): string | null => {
     const url = window.location.href
-    console.log("[CommentsSummarizer]: Getting video ID from URL", url)
     if (url.includes("youtube.com/watch")) {
       return url.split("v=")[1]?.split("&")[0] || null
     } else if (url.includes("youtu.be/")) {
       return url.split("youtu.be/")[1]?.split("?")[0] || null
     }
     return null
-  }
+  }, [])
 
-  const clearState = () => {
+  const clearState = useCallback(() => {
     setIsLoading(false)
     setError(null)
     setCommentsSummary(null)
     setToneRating(null)
-  }
+  }, [])
 
   // Fetch comments automatically when component loads
-  const fetchComments = async () => {
-    console.log("[CommentsSummarizer]: Fetching comments")
-    const videoId = getVideoId()
-    if (!videoId) {
-      setError("Could not extract video ID from URL")
-      clearState()
-      return
-    }
-
-    // Check if auto-summarize is enabled
-    if (!autoSummarize) {
-      console.log(
-        "[CommentsSummarizer]: Auto-summarize disabled - user needs to enable it in popup settings"
-      )
-      clearState()
-      // Don't show anything if auto-summarize is disabled
-      return
-    }
-
-    console.log("[CommentsSummarizer]: Fetching comments for video:", videoId)
-    console.log("[CommentsSummarizer]: API URL:", `http://localhost:8787/get?videoId=${videoId}`)
-
-    try {
-      /**
-       * CORS Note:
-       * - This request is made from the YouTube page context (origin: https://www.youtube.com)
-       * - The backend server must include 'https://www.youtube.com' in Access-Control-Allow-Origin
-       * - If the server doesn't allow this origin, the request will be blocked by CORS policy
-       * - The user needs to configure the backend server to allow requests from YouTube's origin
-       */
-      const response = await ApiService.getComments(videoId)
-      console.log("[CommentsSummarizer]: API response:", response)
-
-      if (response.type === "error") {
-        console.error("[CommentsSummarizer]: Error fetching comments:", response.error)
-
-        // Check if this is a CORS-related error
-        if (response.error?.includes("CORS") || response.error?.includes("Access-Control")) {
-          console.error("[CommentsSummarizer]: CORS error detected - backend server needs to allow YouTube origin")
-        }
-
-        setError(response.error || "Failed to fetch comments")
+  const fetchComments = useCallback(
+    async (forceFetch = false) => {
+      const videoId = getVideoId()
+      if (!videoId) {
+        setError("Could not extract video ID from URL")
         clearState()
         return
       }
 
-      console.log("[CommentsSummarizer]: Received comments summary:", response)
-      console.log("[CommentsSummarizer]: Comments length:", response.comments?.length)
-      setCommentsSummary(response.comments)
-      setToneRating(response.toneRating)
-      setIsLoading(false)
-    } catch (err) {
-      console.error("[CommentsSummarizer]: Error fetching comments:", err)
-
-      // Check if this is a CORS-related error
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
-      if (errorMessage.includes("CORS") || errorMessage.includes("Access-Control")) {
-        console.error("[CommentsSummarizer]: CORS error detected in catch block")
-        setError("CORS policy blocked the request. The backend server needs to allow requests from YouTube's origin (https://www.youtube.com).")
-      } else {
-        setError(errorMessage)
+      // If video hasn't changed and not forcing fetch, don't refetch
+      if (!forceFetch && currentVideoId === videoId) {
+        return
       }
 
-      clearState()
-    }
-  }
+      // Set the new video ID and clear old state
+      setCurrentVideoId(videoId)
 
-  useEffect(() => {
-    console.log(
-      "[CommentsSummarizer]: Component loaded, starting automatic summarization",
-      autoSummarize
-    )
-    if (!autoSummarize) {
-      console.log(
-        "[CommentsSummarizer]: Auto-summarize disabled - user needs to enable it in popup settings"
-      )
-      return
-    }
-    console.log("[CommentsSummarizer]: Fetching comments")
-    fetchComments()
-  }, [autoSummarize])
-
-  // Keep the message listener for manual refresh from popup
-  const msgCallback = useCallback(
-    (
-      message: any,
-      sender: chrome.runtime.MessageSender,
-      sendResponse: (response?: any) => void
-    ): boolean | undefined => {
-      console.log("[CommentsSummarizer]: Received message from popup", message)
-
-      if (message.action === "refreshCommentsSummary") {
-        console.log("[CommentsSummarizer]: Refreshing comments summary")
-        setIsLoading(true)
-        setError(null)
-        fetchComments()
-        sendResponse({ success: true })
-        return true
+      // Check if auto-summarize is enabled
+      if (!autoSummarize) {
+        clearState()
+        return
       }
-      return false
+
+      try {
+        /**
+         * CORS Note:
+         * - This request is made from the YouTube page context (origin: https://www.youtube.com)
+         * - The backend server must include 'https://www.youtube.com' in Access-Control-Allow-Origin
+         * - If the server doesn't allow this origin, the request will be blocked by CORS policy
+         * - The user needs to configure the backend server to allow requests from YouTube's origin
+         */
+        const response = await ApiService.getComments(videoId)
+
+        if (response.type === "error") {
+          console.error(
+            "[CommentsSummarizer]: Error fetching comments:",
+            response.error
+          )
+
+          // Check if this is a CORS-related error
+          if (
+            response.error?.includes("CORS") ||
+            response.error?.includes("Access-Control")
+          ) {
+            console.error(
+              "[CommentsSummarizer]: CORS error detected - backend server needs to allow YouTube origin"
+            )
+          }
+
+          setError(response.error || "Failed to fetch comments")
+          clearState()
+          return
+        }
+
+        setCommentsSummary(response.comments)
+        setToneRating(response.toneRating)
+        setIsLoading(false)
+      } catch (err) {
+        console.error("[CommentsSummarizer]: Error fetching comments:", err)
+
+        // Check if this is a CORS-related error
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error occurred"
+        if (
+          errorMessage.includes("CORS") ||
+          errorMessage.includes("Access-Control")
+        ) {
+          console.error(
+            "[CommentsSummarizer]: CORS error detected in catch block"
+          )
+          setError(
+            "CORS policy blocked the request. The backend server needs to allow requests from YouTube's origin (https://www.youtube.com)."
+          )
+        } else {
+          setError(errorMessage)
+        }
+
+        clearState()
+      }
     },
-    [fetchComments]
+    [getVideoId, currentVideoId, autoSummarize, clearState, setCurrentVideoId]
   )
 
-  useEffect(() => {
-    console.log("[CommentsSummarizer]: Adding message listener")
+  // Handle URL changes when user navigates to different videos
+  const handleUrlChange = useCallback(() => {
+    const newVideoId = getVideoId()
 
-    try {
-    chrome.runtime.onMessage.addListener(msgCallback)
+    // If video ID changed, fetch new comments
+    if (newVideoId !== currentVideoId) {
+      setIsLoading(true)
+      setError(null)
+      setCommentsSummary(null)
+      setToneRating(null)
+      fetchComments()
+    }
+  }, [getVideoId, currentVideoId, fetchComments])
+
+  // Initialize video ID and fetch comments on component mount
+  useEffect(() => {
+    const initialVideoId = getVideoId()
+    setCurrentVideoId(initialVideoId)
+    if (autoSummarize && initialVideoId) {
+      fetchComments(true)
+    } else {
+      clearState()
+    }
+  }, [getVideoId, autoSummarize, fetchComments, clearState])
+
+  // Listen for URL changes (navigation within YouTube)
+  useEffect(() => {
+    // Listen for back/forward navigation
+    const handlePopState = () => handleUrlChange()
+    const handleHashChange = () => handleUrlChange()
+
+    window.addEventListener("popstate", handlePopState)
+    window.addEventListener("hashchange", handleHashChange)
+
+    // Monitor for programmatic navigation (YouTube's SPA navigation)
+    const originalPushState = history.pushState
+    const originalReplaceState = history.replaceState
+
+    history.pushState = function (
+      state: any,
+      title: string,
+      url?: string | URL | null
+    ) {
+      originalPushState.apply(this, arguments as any)
+      handleUrlChange()
+    }
+
+    history.replaceState = function (
+      state: any,
+      title: string,
+      url?: string | URL | null
+    ) {
+      originalReplaceState.apply(this, arguments as any)
+      handleUrlChange()
+    }
 
     return () => {
-      console.log("[CommentsSummarizer]: Removing message listener")
-      chrome.runtime.onMessage.removeListener(msgCallback)
+      window.removeEventListener("popstate", handlePopState)
+      window.removeEventListener("hashchange", handleHashChange)
+      history.pushState = originalPushState
+      history.replaceState = originalReplaceState
     }
-    } catch (error) {
-      console.error(
-        "[CommentsSummarizer]: Error setting up message listener:",
-        error
-      )
-      return
-    }
-  }, [msgCallback])
+  }, [handleUrlChange])
 
-  console.log("[CommentsSummarizer]: Summary display component loaded")
+  // Optimized URL polling for YouTube SPA navigation
+  useEffect(() => {
+    let lastUrl = window.location.href
+    let isPolling = true
+
+    const pollForChanges = () => {
+      if (!isPolling) return
+
+      const currentUrl = window.location.href
+      if (currentUrl !== lastUrl) {
+        lastUrl = currentUrl
+        handleUrlChange()
+      }
+    }
+
+    // Check every 3 seconds when visible
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        pollForChanges()
+      }
+    }, 3000)
+
+    return () => {
+      isPolling = false
+      clearInterval(pollInterval)
+    }
+  }, [handleUrlChange])
+
+  // Handle auto-summarize setting changes
+  useEffect(() => {
+    if (autoSummarize) {
+      fetchComments(true)
+    } else {
+      clearState()
+    }
+  }, [autoSummarize, fetchComments, clearState])
 
   // Show loading state
   if (isLoading) {
-    console.log("[CommentsSummarizer]: Showing loading state")
     return (
       <div
         id="comments-summarizer-summary-display"
@@ -314,7 +372,6 @@ const SummaryDisplay = () => {
 
   // Show error state
   if (error) {
-    console.log("[CommentsSummarizer]: Showing error state", error)
     return (
       <div
         id="comments-summarizer-summary-display"
@@ -365,7 +422,7 @@ const SummaryDisplay = () => {
             </div>
           )}
           <button
-            onClick={fetchComments}
+            onClick={() => fetchComments(true)}
             style={{
               marginTop: "8px",
               padding: "4px 8px",
@@ -385,7 +442,6 @@ const SummaryDisplay = () => {
 
   // Show summary
   if (!commentsSummary) {
-    console.log("[CommentsSummarizer]: No comments summary to show")
     return null
   }
 
@@ -470,8 +526,8 @@ const SummaryDisplay = () => {
                     height: "20px",
                     borderRadius: "10px",
                     position: "relative",
-                background:
-                  "linear-gradient(to right, #f8b4c4 0%, #f7c59f 25%, #9ca3af 50%, #a7f3d0 75%, #86efac 100%)",
+                    background:
+                      "linear-gradient(to right, #f8b4c4 0%, #f7c59f 25%, #9ca3af 50%, #a7f3d0 75%, #86efac 100%)",
                     boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.1)"
                   }}>
                   {/* Current Rating Indicator */}
