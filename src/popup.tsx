@@ -2,35 +2,22 @@ import { useEffect, useState } from "react"
 
 import { useStorage } from "@plasmohq/storage/hook"
 
+import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card"
+import { Switch } from "./components/ui/switch"
+
 import "./styles.css"
+
+import { cn } from "./lib/utils"
 
 function IndexPopup() {
   // Use individual storage hooks
   const [darkMode, setDarkMode] = useStorage("darkMode", true)
-  const [apiKey, setApiKey] = useStorage("apiKey", "")
-  const [summarizationModel, setSummarizationModel] = useStorage(
-    "summarizationModel",
-    "gpt-3.5-turbo"
-  )
   const [maxComments, setMaxComments] = useStorage("maxComments", 50)
   const [autoSummarize, setAutoSummarize] = useStorage("autoSummarize", false)
   const [showThumbnails, setShowThumbnails] = useStorage("showThumbnails", true)
   const [selectedVideo, setSelectedVideo] = useState("")
   const [isYouTubeVideo, setIsYouTubeVideo] = useState(false)
   const [videoTitle, setVideoTitle] = useState("")
-
-  const [hailingFrequency, setHailingFrequency] = useStorage("hailing", (v) =>
-    v === undefined ? "42" : v
-  )
-
-  // Computed values
-  const hasApiKey = Boolean(apiKey)
-  const isYouTubeReady = Boolean(apiKey)
-
-  // Toggle auto-summarize setting
-  const toggleAutoSummarize = () => {
-    setAutoSummarize(!autoSummarize)
-  }
 
   // Detect YouTube video
   useEffect(() => {
@@ -122,21 +109,17 @@ function IndexPopup() {
   }
 
   return (
-    <div
-      className={`w-80 p-6 rounded-xl shadow-2xl transition-all duration-300 ${
-        darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
-      }`}>
+    <div className="w-80 p-6 shadow-2xl transition-all duration-300 dark bg-background text-foreground">
       {/* Header */}
       <div className="text-center mb-6">
         <div className="flex items-center justify-center mb-3">
           <div
-            className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-              darkMode
-                ? "bg-gradient-to-br from-purple-600 to-blue-600"
-                : "bg-gradient-to-br from-purple-500 to-blue-500"
-            }`}>
+            className={cn(
+              "w-12 h-12 rounded-full flex items-center justify-center",
+              "bg-gradient-to-br from-primary to-secondary"
+            )}>
             <svg
-              className="w-6 h-6 text-white"
+              className="w-6 h-6 text-primary-foreground"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24">
@@ -149,26 +132,16 @@ function IndexPopup() {
             </svg>
           </div>
         </div>
-        <h2 className="text-xl font-bold mb-1 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+        <h2 className="text-xl font-bold mb-1 bg-gradient-to-r from-primary to-[#abc123] bg-clip-text text-transparent">
           Comments Summarizer
         </h2>
-        <p
-          className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+        <p className="text-sm text-muted-foreground">
           AI-powered YouTube comment analysis
-        </p>
-        <p
-          className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
-          onClick={() =>
-            setHailingFrequency(
-              (parseInt(hailingFrequency, 10) + 1).toString()
-            )
-          }>
-          {hailingFrequency}
         </p>
       </div>
 
       {/* Current Video Status */}
-      <div
+      {/* <div
         className={`mb-4 p-4 rounded-lg border transition-colors ${
           darkMode
             ? "bg-gray-800 border-gray-700"
@@ -271,87 +244,221 @@ function IndexPopup() {
             {isYouTubeVideo ? "✓ YouTube Video" : "⚠ Not YouTube"}
           </span>
         </div>
-      </div>
+      </div> */}
 
       {/* Quick Settings Overview */}
-      <div
-        className={`mb-4 p-4 rounded-lg border ${darkMode ? "bg-gray-800 border-gray-700" : "bg-gray-50 border-gray-200"}`}>
-        <h4
-          className={`text-sm font-semibold mb-3 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
-          Quick Settings
-        </h4>
-        <div className="space-y-2 text-xs">
-          <div className="flex justify-between items-center">
-            <span className={darkMode ? "text-gray-400" : "text-gray-600"}>
-              AI Model:
-            </span>
-            <span
-              className={`px-2 py-1 rounded-full ${
-                darkMode
-                  ? "bg-purple-900 text-purple-200"
-                  : "bg-purple-100 text-purple-800"
-              }`}>
-              {summarizationModel.replace("-", " ").toUpperCase()}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className={darkMode ? "text-gray-400" : "text-gray-600"}>
-              Max Comments:
-            </span>
-            <span className={darkMode ? "text-gray-300" : "text-gray-700"}>
-              {maxComments}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className={darkMode ? "text-gray-400" : "text-gray-600"}>
-              Auto-summarize:
-            </span>
-            <span
-              className={`px-2 py-1 rounded-full text-xs ${
-                autoSummarize
-                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                  : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-              }`}>
-              {autoSummarize ? "ON" : "OFF"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Action Button */}
-      <button
-        onClick={openOptions}
-        className={`w-full inline-flex items-center justify-center px-5 py-3 text-sm font-medium rounded-lg transition-all duration-200 transform bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}>
-        <svg
-          className="w-4 h-4 mr-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-        Open Settings
-      </button>
+      <Card className="mb-4 p-0 flex flex-col gap-2">
+        <CardHeader className="px-4 pt-3 pb-0">
+          <CardTitle className="font-bold text-base p-0">
+            Quick Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-3 pt-0 flex flex-col gap-2">
+          <label
+            htmlFor="auto-summarize"
+            className="flex justify-between items-center text-sm">
+            <span>Enable Summarization</span>
+            <Switch
+              id="auto-summarize"
+              checked={autoSummarize}
+              onCheckedChange={setAutoSummarize}
+            />
+          </label>
+        </CardContent>
+      </Card>
 
       {/* Settings & Status Bar */}
-      <div className="mt-4 flex items-center justify-between text-xs">
+      <div className="flex flex-col gap-2 items-center">
+        <div className="mt-4 flex items-center justify-center text-xs">
+          <a
+            href="https://www.buymeacoffee.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center space-x-1 px-3 py-1 rounded-full transition-colors text-primary hover:text-secondary-foreground hover:bg-secondary">
+            {/* BuyMeACoffee Icon SVG */}
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              {/* Coffee cup body */}
+              <path
+                d="M18 8h-2V6a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H6a1 1 0 000 2h1v7a3 3 0 003 3h6a3 3 0 003-3V10h1a1 1 0 100-2z"
+                fill="currentColor"
+                className="text-amber-600"
+              />
+
+              {/* Coffee surface */}
+              <ellipse
+                cx="12"
+                cy="10"
+                rx="5"
+                ry="1"
+                fill="currentColor"
+                className="text-amber-800"
+              />
+
+              {/* Steam */}
+              <path
+                d="M8 8c0-1 1-2 2-2s2 1 2 2M10 6c0-1 1-2 2-2s2 1 2 2M12 4c0-1 1-2 2-2s2 1 2 2"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                className="text-amber-400"
+                opacity="0.8"
+              />
+
+              {/* Handle */}
+              <path
+                d="M16 7a2 2 0 012 2v2a2 2 0 01-2 2"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                fill="none"
+                className="text-amber-700"
+              />
+
+              {/* Coffee beans pattern */}
+              <circle
+                cx="9"
+                cy="11"
+                r="0.8"
+                fill="currentColor"
+                className="text-amber-900"
+                opacity="0.6"
+              />
+              <circle
+                cx="11"
+                cy="12"
+                r="0.6"
+                fill="currentColor"
+                className="text-amber-900"
+                opacity="0.4"
+              />
+              <circle
+                cx="13"
+                cy="11.5"
+                r="0.7"
+                fill="currentColor"
+                className="text-amber-900"
+                opacity="0.5"
+              />
+            </svg>
+            <span>Buy me a coffee</span>
+          </a>
+
+          <button
+            onClick={openOptions}
+            className="flex items-center space-x-1 px-3 py-1 rounded-full transition-colors text-primary hover:text-primary-foreground hover:bg-primary">
+            <svg
+              className="w-3 h-3"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              {/* Toolbox base */}
+              <rect
+                x="4"
+                y="10"
+                width="16"
+                height="10"
+                rx="1"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="currentColor"
+                className="text-primary"
+              />
+
+              {/* Toolbox handle */}
+              <rect
+                x="10"
+                y="8"
+                width="4"
+                height="3"
+                rx="0.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="currentColor"
+                className="text-primary"
+              />
+
+              {/* Wrench */}
+              <path
+                d="M6 16l2-2m0 0l1-1m-1 1l-1 1m2-2l1-1m-1 1l-1 1"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                className="text-secondary"
+              />
+              <circle
+                cx="8"
+                cy="14"
+                r="0.8"
+                fill="currentColor"
+                className="text-secondary"
+              />
+
+              {/* Screwdriver */}
+              <rect
+                x="12"
+                y="14"
+                width="3"
+                height="0.8"
+                rx="0.2"
+                fill="currentColor"
+                className="text-gray-600"
+              />
+              <rect
+                x="11.5"
+                y="15.5"
+                width="1"
+                height="2"
+                rx="0.1"
+                fill="currentColor"
+                className="text-gray-700"
+              />
+
+              {/* Hammer */}
+              <rect
+                x="16"
+                y="15"
+                width="2"
+                height="0.6"
+                rx="0.1"
+                fill="currentColor"
+                className="text-purple-600"
+              />
+              <rect
+                x="15.8"
+                y="16.2"
+                width="0.8"
+                height="1.5"
+                rx="0.1"
+                fill="currentColor"
+                className="text-purple-700"
+              />
+
+              {/* Plus sign for "more" */}
+              <circle
+                cx="19"
+                cy="12"
+                r="1.5"
+                fill="currentColor"
+                className="text-green-500"
+              />
+              <path
+                d="M19 11v2m-1-1h2"
+                stroke="white"
+                strokeWidth="1"
+                strokeLinecap="round"
+              />
+            </svg>
+            <span>More Tools</span>
+          </button>
+        </div>
+
         <button
           onClick={openOptions}
-          className={`flex items-center space-x-1 px-3 py-1 rounded-full transition-colors ${
-            darkMode
-              ? "text-purple-400 hover:text-purple-300 hover:bg-gray-800"
-              : "text-purple-600 hover:text-purple-700 hover:bg-gray-100"
-          }`}>
+          className="flex items-center space-x-1 px-3 py-1 rounded-full transition-colors text-primary hover:text-primary-foreground hover:bg-primary">
           <svg
             className="w-3 h-3"
             fill="none"
@@ -370,25 +477,13 @@ function IndexPopup() {
               d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          <span>Settings</span>
+          <span>Creator? Let's talk!</span>
         </button>
-
-        <div
-          className={`flex items-center space-x-1 px-2 py-1 rounded-full ${
-            hasApiKey
-              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-          }`}>
-          <div
-            className={`w-2 h-2 rounded-full ${hasApiKey ? "bg-green-500" : "bg-red-500"}`}></div>
-          <span>{hasApiKey ? "API Ready" : "API Missing"}</span>
-        </div>
       </div>
 
       {/* Footer */}
-      <div
-        className={`mt-4 text-center ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
-        <p className="text-xs">v0.0.1 • Made with ❤️</p>
+      <div className="mt-4 text-center text-muted-foreground">
+        <p className="text-xs">v0.0.1 • Made with ❤️ by BNN</p>
       </div>
     </div>
   )
