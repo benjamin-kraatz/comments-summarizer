@@ -80,6 +80,15 @@ const commentsResponseSchema = z.object({
 
 type CommentsResponse = z.infer<typeof commentsResponseSchema>
 
+/**
+ * API Service for communicating with the backend server
+ *
+ * Note on CORS:
+ * - Content scripts run in the context of the webpage they're injected into
+ * - When on YouTube, requests appear to come from origin 'https://www.youtube.com'
+ * - The backend server must include 'https://www.youtube.com' in Access-Control-Allow-Origin header
+ * - Without proper CORS headers, the browser blocks cross-origin requests for security
+ */
 export class ApiService {
   private static readonly API_URL = "http://localhost:8787"
 
@@ -132,7 +141,33 @@ export class ApiService {
 
     try {
       return await withRetry(async () => {
-        const response = await fetch(`${this.API_URL}/get?videoId=${videoId}`)
+        const requestUrl = `${this.API_URL}/get?videoId=${videoId}`
+        console.log(`[API Service] Making request to: ${requestUrl}`)
+
+        // Check if server is reachable first
+        try {
+          const testResponse = await fetch(this.API_URL, { method: 'HEAD' })
+          console.log(`[API Service] Server reachability test: ${testResponse.status}`)
+          if (!testResponse.ok) {
+            throw new Error(`Server not reachable: ${testResponse.status} ${testResponse.statusText}`)
+          }
+        } catch (error) {
+          console.warn(`[API Service] Server reachability test failed:`, error)
+        }
+
+        const response = await fetch(requestUrl)
+
+        console.log(`[API Service] Response status: ${response.status} ${response.statusText}`)
+        console.log(`[API Service] Response headers:`, Object.fromEntries(response.headers.entries()))
+
+        // Check if response has a body
+        const contentLength = response.headers.get('content-length')
+        console.log(`[API Service] Content-Length: ${contentLength}`)
+
+        if (contentLength === '0') {
+          console.warn(`[API Service] Response has empty body (Content-Length: 0)`)
+          throw new Error("Server returned empty response")
+        }
 
         // Handle HTTP error responses
         if (!response.ok) {
@@ -148,11 +183,45 @@ export class ApiService {
           throw new Error(errorMessage)
         }
 
-        const bodyData = (await response.json()) as CommentsResponse
+        let bodyText: string
+        let bodyData: CommentsResponse
+
+        try {
+          bodyText = await response.text()
+          console.log(`[API Service] Response body length: ${bodyText.length}`)
+          console.log(`[API Service] Response body (first 500 chars):`, bodyText.substring(0, 500))
+
+          // Check if response looks like valid JSON
+          if (bodyText.trim().startsWith('{') && bodyText.trim().endsWith('}')) {
+            console.log(`[API Service] Response appears to be valid JSON`)
+          } else {
+            console.warn(`[API Service] Response doesn't look like JSON:`, bodyText.substring(0, 100))
+
+            // Check if this looks like an HTML error page
+            if (bodyText.toLowerCase().includes('<!doctype html>') || bodyText.toLowerCase().includes('<html')) {
+              console.error(`[API Service] Server returned HTML instead of JSON - server might be down or returning an error page`)
+              throw new Error("Server returned HTML error page instead of JSON response")
+            }
+          }
+        } catch (error) {
+          console.error("[API Service] Error reading response text:", error)
+          console.error("[API Service] Response object:", response)
+          throw new Error("Failed to read response body from server")
+        }
+
+        try {
+          bodyData = JSON.parse(bodyText) as CommentsResponse
+        } catch (error) {
+          console.error("[API Service] Error parsing JSON response:", error)
+          console.error("[API Service] Raw response text:", bodyText)
+          throw new Error(`Invalid JSON response from server: ${error instanceof Error ? error.message : 'Unknown JSON error'}`)
+        }
+
         const parsed = commentsResponseSchema.safeParse(bodyData)
 
         if (!parsed.success) {
-          console.error("Error parsing comments:", parsed.error)
+          console.error("[API Service] Error validating response schema:", parsed.error)
+          console.error("[API Service] Received data:", bodyData)
           throw new Error(`Error parsing comments response from backend: ${parsed.error.message}`)
         }
 

@@ -48,6 +48,34 @@ Summarize YouTube video comments with advanced AI models. Get insights, key them
 
 - **Browser**: Chrome 88+ or Chromium-based browsers
 - **Permissions**: Access to YouTube pages
+
+## 🔧 Backend Server Configuration
+
+### CORS Setup (Important!)
+
+The extension makes API requests from YouTube page contexts, which means requests appear to come from origin `https://www.youtube.com`. Your backend server **must** include this origin in the CORS configuration:
+
+```javascript
+// Example server configuration (Node.js/Express)
+app.use(cors({
+  origin: [
+    'https://www.youtube.com',
+    'https://youtube.com',
+    // Add other origins if needed
+  ],
+  credentials: true
+}));
+```
+
+**Without proper CORS configuration:**
+- Requests will be blocked by browser security policy
+- You'll see `net::ERR_FAILED` errors in the console
+- The extension will show CORS-related error messages
+
+**Common CORS Error:**
+```
+Access to fetch at 'http://localhost:8787/get?videoId=...' from origin 'https://www.youtube.com' has been blocked by CORS policy
+```
 - **API Key**: Required for AI summarization services
 
 ## 🛠 Installation

@@ -1,209 +1,83 @@
 import { useEffect, useState } from "react"
 
-import { useSettings } from "./store/settingsStore"
-import type { YouTubeVideoMetadata } from "./types/youtube"
+import { useStorage } from "@plasmohq/storage/hook"
 
 import "./styles.css"
 
-import { ApiService } from "./services/api-service"
-
 function IndexPopup() {
-  const {
-    darkMode,
-    hasApiKey,
-    isYouTubeReady,
-    summarizationModel,
-    maxComments,
-    autoSummarize
-  } = useSettings()
+  // Use individual storage hooks
+  const [darkMode, setDarkMode] = useStorage("darkMode", true)
+  const [apiKey, setApiKey] = useStorage("apiKey", "")
+  const [summarizationModel, setSummarizationModel] = useStorage(
+    "summarizationModel",
+    "gpt-3.5-turbo"
+  )
+  const [maxComments, setMaxComments] = useStorage("maxComments", 50)
+  const [autoSummarize, setAutoSummarize] = useStorage("autoSummarize", false)
+  const [showThumbnails, setShowThumbnails] = useStorage("showThumbnails", true)
   const [selectedVideo, setSelectedVideo] = useState("")
   const [isYouTubeVideo, setIsYouTubeVideo] = useState(false)
   const [videoTitle, setVideoTitle] = useState("")
-  const [videoMetadata, setVideoMetadata] =
-    useState<YouTubeVideoMetadata | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [metadataError, setMetadataError] = useState<string | null>(null)
 
-  // Extract YouTube video metadata from content script
-  const extractVideoMetadata = async (
-    tabId: number,
-    url: string,
-    maxRetries: number = 3
-  ) => {
-    try {
-      setMetadataError(null)
+  const [hailingFrequency, setHailingFrequency] = useStorage("hailing", (v) =>
+    v === undefined ? "42" : v
+  )
 
-      // Get the video ID from the URL
-      const videoId = url.split("v=")[1]?.split("&")[0]
-      if (!videoId) {
-        throw new Error("Could not extract video ID from URL")
-      }
+  // Computed values
+  const hasApiKey = Boolean(apiKey)
+  const isYouTubeReady = Boolean(apiKey)
 
-      // First, try finding the comment summarization in the API.
-      const apiResponse = await ApiService.getComments(videoId)
-      if (apiResponse.type === "error") {
-        setMetadataError(apiResponse.error ?? "Error getting comments")
-        return
-      }
-
-      console.log("[CommentsSummarizer]: Sending message to content script")
-      chrome.tabs.sendMessage(
-        tabId,
-        {
-          action: "getCommentsSummary",
-          commentsSummary: apiResponse.comments,
-          toneRating: apiResponse.toneRating
-        },
-        (response) => {
-          console.log(
-            "[CommentsSummarizer]: Received message from content script",
-            response
-          )
-        }
-      )
-
-      // Not found in the API, so call the server to get them comments.
-      // TODO:
-
-      // Check if chrome.tabs is available
-      if (typeof chrome === "undefined" || !chrome.tabs) {
-        throw new Error("Chrome tabs API not available")
-      }
-
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          const response = await new Promise<any>((resolve, reject) => {
-            chrome.tabs.sendMessage(
-              tabId,
-              {
-                action: "extractVideoMetadata"
-              },
-              (response) => {
-                if (chrome.runtime.lastError) {
-                  reject(new Error(chrome.runtime.lastError.message))
-                } else {
-                  resolve(response)
-                }
-              }
-            )
-          })
-
-          if (response && response.success) {
-            setVideoMetadata(response.data)
-            setVideoTitle(response.data.title)
-            return // Success, exit the retry loop
-          } else {
-            const errorMessage =
-              response?.error || "Failed to extract video metadata"
-            throw new Error(errorMessage)
-          }
-        } catch (error) {
-          console.warn(
-            `[CommentsSummarizer]: Metadata extraction attempt ${attempt} failed:`,
-            error
-          )
-
-          // If this isn't the last attempt, wait before retrying
-          if (attempt < maxRetries) {
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-          } else {
-            throw error
-          }
-        }
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred"
-      setMetadataError(errorMessage)
-      console.error(
-        "[CommentsSummarizer]: Error communicating with content script:",
-        error
-      )
-    }
+  // Toggle auto-summarize setting
+  const toggleAutoSummarize = () => {
+    setAutoSummarize(!autoSummarize)
   }
 
   // Detect YouTube video
   useEffect(() => {
     console.log("[CommentsSummarizer]: Detecting YouTube video")
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs: any) => {
-      console.log("[CommentsSummarizer]: Querying tabs", tabs)
-      if (tabs[0].url) {
-        const url = tabs[0].url
-        console.log("[CommentsSummarizer]: Found URL", url)
-        const isYouTube =
-          url.includes("youtube.com/watch") ||
-          url.includes("youtu.be/") ||
-          url.includes("google.com")
-        console.log("[CommentsSummarizer]: Found isYouTube", isYouTube)
-        setIsYouTubeVideo(isYouTube)
 
-        if (isYouTube) {
+    chrome.tabs.query(
+      { active: true, currentWindow: true },
+      (tabs: chrome.tabs.Tab[]) => {
+        console.log("[CommentsSummarizer]: Querying tabs", tabs)
+        if (tabs[0] && tabs[0].url) {
+          const url = tabs[0].url
+          console.log("[CommentsSummarizer]: Found URL", url)
+          const isYouTube =
+            url.includes("youtube.com/watch") ||
+            url.includes("youtu.be/") ||
+            url.includes("google.com")
           console.log("[CommentsSummarizer]: Found isYouTube", isYouTube)
-          // Extract video ID and get basic info
-          const videoId = url.includes("youtube.com/watch")
-            ? url.split("v=")[1]?.split("&")[0]
-            : url.split("youtu.be/")[1]?.split("?")[0]
-          if (videoId) {
+          setIsYouTubeVideo(isYouTube)
+
+          if (isYouTube) {
+            console.log("[CommentsSummarizer]: Found isYouTube", isYouTube)
+            // Extract video ID and get basic info
+            const videoId = url.includes("youtube.com/watch")
+              ? url.split("v=")[1]?.split("&")[0]
+              : url.split("youtu.be/")[1]?.split("?")[0]
+            if (videoId) {
+              setSelectedVideo(url)
+              setVideoTitle(`YouTube Video (${videoId.substring(0, 8)}...)`)
+            }
+          } else {
             setSelectedVideo(url)
-            setVideoTitle(`Loading video info...`)
-
-            // Check if content script is available before trying to extract metadata
-            chrome.tabs.get(tabs[0].id, (tab) => {
-              if (chrome.runtime.lastError) {
-                console.error(
-                  "[CommentsSummarizer]: Error getting tab:",
-                  chrome.runtime.lastError
-                )
-                setMetadataError("Could not access current tab")
-                return
-              }
-
-              // Try to extract metadata, with fallback to basic info
-              extractVideoMetadata(tabs[0].id, url).catch(() => {
-                // Fallback: show basic info if content script fails
-                console.log(
-                  "[CommentsSummarizer]: Content script not available, using fallback"
-                )
-                setVideoTitle(`YouTube Video (${videoId.substring(0, 8)}...)`)
-                setMetadataError(
-                  "Content script not loaded - showing basic info"
-                )
-              })
-            })
+            setVideoTitle("Not a YouTube video")
           }
         } else {
-          setSelectedVideo(url)
-          setVideoTitle("Not a YouTube video")
-          setVideoMetadata(null)
-          setMetadataError(null)
+          setVideoTitle("No active tab found")
         }
       }
-    })
+    )
   }, [])
 
-  const handleSummarize = async () => {
-    if (!isYouTubeVideo || !hasApiKey) return
-
-    setIsProcessing(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      // In real implementation, call your summarization API here
-      console.log(
-        "[CommentsSummarizer]: Summarizing comments for:",
-        selectedVideo
-      )
-    } catch (error) {
-      console.error("[CommentsSummarizer]: Error summarizing:", error)
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
   const handleRefresh = () => {
-    if (typeof chrome !== "undefined") {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs: any) => {
-        if (tabs[0].url) {
+    console.log("[CommentsSummarizer]: Refreshing tab info")
+
+    chrome.tabs.query(
+      { active: true, currentWindow: true },
+      (tabs: chrome.tabs.Tab[]) => {
+        if (tabs[0] && tabs[0].url) {
           const url = tabs[0].url
           setSelectedVideo(url)
           const isYouTube =
@@ -214,47 +88,36 @@ function IndexPopup() {
             const videoId = url.includes("youtube.com/watch")
               ? url.split("v=")[1]?.split("&")[0]
               : url.split("youtu.be/")[1]?.split("?")[0]
-
             if (videoId) {
-              setVideoTitle(`Loading video info...`)
-
-              // Check if content script is available before trying to extract metadata
-              chrome.tabs.get(tabs[0].id, (tab) => {
-                if (chrome.runtime.lastError) {
-                  console.error(
-                    "[CommentsSummarizer]: Error getting tab:",
-                    chrome.runtime.lastError
-                  )
-                  setMetadataError("Could not access current tab")
-                  return
-                }
-
-                // Try to extract metadata, with fallback to basic info
-                extractVideoMetadata(tabs[0].id, url).catch(() => {
-                  // Fallback: show basic info if content script fails
-                  console.log(
-                    "[CommentsSummarizer]: Content script not available, using fallback"
-                  )
-                  setVideoTitle(`YouTube Video (${videoId.substring(0, 8)}...)`)
-                  setMetadataError(
-                    "Content script not loaded - showing basic info"
-                  )
-                })
-              })
+              setVideoTitle(`YouTube Video (${videoId.substring(0, 8)}...)`)
             }
           } else {
             setVideoTitle("Not a YouTube video")
-            setVideoMetadata(null)
-            setMetadataError(null)
           }
+        } else {
+          setVideoTitle("No active tab found")
         }
-      })
-    }
+      }
+    )
   }
 
   const openOptions = () => {
-    if (chrome?.runtime?.openOptionsPage) {
+    console.log("[CommentsSummarizer]: Opening options page")
+
+    // Check if Chrome APIs are available
+    if (
+      typeof chrome === "undefined" ||
+      !chrome.runtime ||
+      !chrome.runtime.openOptionsPage
+    ) {
+      console.warn("[CommentsSummarizer]: Chrome runtime API not available")
+      return
+    }
+
+    try {
       chrome.runtime.openOptionsPage()
+    } catch (error) {
+      console.error("[CommentsSummarizer]: Error opening options page:", error)
     }
   }
 
@@ -292,6 +155,15 @@ function IndexPopup() {
         <p
           className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
           AI-powered YouTube comment analysis
+        </p>
+        <p
+          className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}
+          onClick={() =>
+            setHailingFrequency(
+              (parseInt(hailingFrequency, 10) + 1).toString()
+            )
+          }>
+          {hailingFrequency}
         </p>
       </div>
 
@@ -337,109 +209,57 @@ function IndexPopup() {
           </button>
         </div>
 
-        {metadataError ? (
-          <div className="mb-3">
-            <div
-              className={`p-2 rounded text-sm ${
-                darkMode
-                  ? "bg-red-900/20 text-red-300 border border-red-700"
-                  : "bg-red-50 text-red-700 border border-red-200"
-              }`}>
-              <div className="flex items-center">
-                <svg
-                  className="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                {metadataError}
-              </div>
-            </div>
+        <div className="space-y-3">
+          <div>
+            <h3
+              className={`text-sm font-semibold mb-1 ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
+              {videoTitle}
+            </h3>
           </div>
-        ) : videoMetadata ? (
-          <div className="space-y-3">
-            {/* Video Title */}
-            <div>
-              <h3
-                className={`text-sm font-semibold mb-1 ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
-                {videoMetadata.title}
-              </h3>
-            </div>
 
-            {/* Channel Info */}
-            <div className="flex items-center space-x-2">
-              <svg
-                className="w-4 h-4 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-              <a
-                href={videoMetadata.channelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`text-sm hover:underline ${darkMode ? "text-blue-400" : "text-blue-600"}`}>
-                {videoMetadata.channelName}
-              </a>
-            </div>
-
-            {/* Metadata Row */}
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center space-x-3">
-                <span className={darkMode ? "text-gray-400" : "text-gray-600"}>
-                  📅 {videoMetadata.publishedDate}
-                </span>
-                <span className={darkMode ? "text-gray-400" : "text-gray-600"}>
-                  👁️ {videoMetadata.views}
+          {isYouTubeVideo && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span
+                  className={`text-xs ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+                  Auto-summarization active
                 </span>
               </div>
-              <a
-                href={videoMetadata.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs transition-colors ${
-                  darkMode
-                    ? "text-blue-400 hover:text-blue-300 hover:bg-gray-700"
-                    : "text-blue-600 hover:text-blue-700 hover:bg-gray-200"
-                }`}
-                title="Open video">
-                <svg
-                  className="w-3 h-3 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
-                </svg>
-                Open
-              </a>
+              <div className="flex items-center space-x-2">
+                <span
+                  className={`px-2 py-1 text-xs rounded-full ${
+                    autoSummarize
+                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                  }`}>
+                  {autoSummarize ? "ON" : "OFF"}
+                </span>
+                <button
+                  onClick={toggleAutoSummarize}
+                  className={`p-1 rounded text-xs transition-colors ${
+                    darkMode
+                      ? "hover:bg-gray-700 text-gray-400"
+                      : "hover:bg-gray-200 text-gray-600"
+                  }`}
+                  title="Toggle auto-summarization">
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100"></div>
-            <span
-              className={`ml-2 text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-              Loading video info...
-            </span>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="flex items-center mt-3">
           <span
@@ -498,55 +318,29 @@ function IndexPopup() {
         </div>
       </div>
 
-      {/* Action Button */}
+      {/* Main Action Button */}
       <button
-        onClick={handleSummarize}
-        disabled={!isYouTubeVideo || !hasApiKey || isProcessing}
-        className={`w-full inline-flex items-center justify-center px-5 py-3 text-sm font-medium rounded-lg transition-all duration-200 transform ${
-          !isYouTubeVideo || !hasApiKey
-            ? "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
-            : isProcessing
-              ? "bg-yellow-600 text-white hover:bg-yellow-700"
-              : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 hover:scale-[1.02] active:scale-[0.98]"
-        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}>
-        {isProcessing ? (
-          <>
-            <svg
-              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Processing...
-          </>
-        ) : (
-          <>
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-            {isYouTubeVideo ? "Summarize Comments" : "Select YouTube Video"}
-          </>
-        )}
+        onClick={openOptions}
+        className={`w-full inline-flex items-center justify-center px-5 py-3 text-sm font-medium rounded-lg transition-all duration-200 transform bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}>
+        <svg
+          className="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+        </svg>
+        Open Settings
       </button>
 
       {/* Settings & Status Bar */}

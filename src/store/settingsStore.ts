@@ -1,115 +1,114 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { useEffect } from "react"
 
+import { useStorage } from "@plasmohq/storage/hook"
+
+// Settings interface - simplified for content script usage
 export interface SettingsState {
   // Theme
   darkMode: boolean
 
   // API Configuration
+  /**
+   * @deprecated An API key is no longer required
+   */
   apiKey: string
 
   // Summarization Settings
-  summarizationModel: 'gpt-3.5-turbo' | 'gpt-4' | 'gpt-4-turbo' | 'claude-3-haiku' | 'claude-3-sonnet'
-  summaryLength: 'short' | 'medium' | 'long' | 'detailed'
+  /**
+   * @deprecated There is no summarization model selection anymore.
+   */
+  summarizationModel:
+    | "gpt-3.5-turbo"
+    | "gpt-4"
+    | "gpt-4-turbo"
+    | "claude-3-haiku"
+    | "claude-3-sonnet"
+  summaryLength: "short" | "medium" | "long" | "detailed"
   maxComments: number
 
   // Display Options
   autoSummarize: boolean
   showThumbnails: boolean
-
-  // Actions
-  setDarkMode: (darkMode: boolean) => void
-  setApiKey: (apiKey: string) => void
-  setSummarizationModel: (model: SettingsState['summarizationModel']) => void
-  setSummaryLength: (length: SettingsState['summaryLength']) => void
-  setMaxComments: (maxComments: number) => void
-  setAutoSummarize: (autoSummarize: boolean) => void
-  setShowThumbnails: (showThumbnails: boolean) => void
-  resetToDefaults: () => void
 }
 
 // Default settings
-const defaultSettings: Omit<SettingsState, 'setDarkMode' | 'setApiKey' | 'setSummarizationModel' | 'setSummaryLength' | 'setMaxComments' | 'setAutoSummarize' | 'setShowThumbnails' | 'resetToDefaults'> = {
+export const defaultSettings: SettingsState = {
   darkMode: true,
-  apiKey: '',
-  summarizationModel: 'gpt-3.5-turbo',
-  summaryLength: 'medium',
+  apiKey: "",
+  summarizationModel: "gpt-3.5-turbo",
+  summaryLength: "medium",
   maxComments: 50,
   autoSummarize: false,
-  showThumbnails: true,
+  showThumbnails: true
 }
 
-export const useSettingsStore = create<SettingsState>()(
-  persist(
-    (set, get) => ({
-      ...defaultSettings,
-
-      setDarkMode: (darkMode: boolean) => {
-        set({ darkMode })
-        // Apply to document immediately
-        if (typeof document !== 'undefined') {
-          document.documentElement.classList.toggle('dark', darkMode)
-        }
-      },
-
-      setApiKey: (apiKey: string) => set({ apiKey }),
-
-      setSummarizationModel: (summarizationModel) => set({ summarizationModel }),
-
-      setSummaryLength: (summaryLength) => set({ summaryLength }),
-
-      setMaxComments: (maxComments: number) => set({ maxComments }),
-
-      setAutoSummarize: (autoSummarize: boolean) => set({ autoSummarize }),
-
-      setShowThumbnails: (showThumbnails: boolean) => set({ showThumbnails }),
-
-      resetToDefaults: () => set({ ...defaultSettings }),
-    }),
-    {
-      name: 'comments-summarizer-settings',
-      // Only persist specific fields, not actions
-      partialize: (state) => ({
-        darkMode: state.darkMode,
-        apiKey: state.apiKey,
-        summarizationModel: state.summarizationModel,
-        summaryLength: state.summaryLength,
-        maxComments: state.maxComments,
-        autoSummarize: state.autoSummarize,
-        showThumbnails: state.showThumbnails,
-      }),
-    }
-  )
-)
-
-// Helper hook for components that only need to read settings
+// Helper hook for components that need both reading and writing settings
 export const useSettings = () => {
-  const store = useSettingsStore()
+  const [darkMode, setDarkMode] = useStorage(
+    "darkMode",
+    defaultSettings.darkMode
+  )
+  const [apiKey, setApiKey] = useStorage("apiKey", defaultSettings.apiKey)
+  const [summarizationModel, setSummarizationModel] = useStorage(
+    "summarizationModel",
+    defaultSettings.summarizationModel
+  )
+  const [summaryLength, setSummaryLength] = useStorage(
+    "summaryLength",
+    defaultSettings.summaryLength
+  )
+  const [maxComments, setMaxComments] = useStorage(
+    "maxComments",
+    defaultSettings.maxComments
+  )
+  const [autoSummarize, setAutoSummarize] = useStorage(
+    "autoSummarize",
+    defaultSettings.autoSummarize
+  )
+  const [showThumbnails, setShowThumbnails] = useStorage(
+    "showThumbnails",
+    defaultSettings.showThumbnails
+  )
+
+  // Apply dark mode to document immediately
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", darkMode)
+    }
+  }, [darkMode])
 
   return {
     // State
-    darkMode: store.darkMode,
-    apiKey: store.apiKey,
-    summarizationModel: store.summarizationModel,
-    summaryLength: store.summaryLength,
-    maxComments: store.maxComments,
-    autoSummarize: store.autoSummarize,
-    showThumbnails: store.showThumbnails,
+    darkMode,
+    apiKey,
+    summarizationModel,
+    summaryLength,
+    maxComments,
+    autoSummarize,
+    showThumbnails,
 
     // Computed values
-    hasApiKey: Boolean(store.apiKey),
-    isYouTubeReady: Boolean(store.apiKey),
+    hasApiKey: Boolean(apiKey),
+    isYouTubeReady: Boolean(apiKey),
 
     // Actions
     actions: {
-      setDarkMode: store.setDarkMode,
-      setApiKey: store.setApiKey,
-      setSummarizationModel: store.setSummarizationModel,
-      setSummaryLength: store.setSummaryLength,
-      setMaxComments: store.setMaxComments,
-      setAutoSummarize: store.setAutoSummarize,
-      setShowThumbnails: store.setShowThumbnails,
-      resetToDefaults: store.resetToDefaults,
-    },
+      setDarkMode,
+      setApiKey,
+      setSummarizationModel,
+      setSummaryLength,
+      setMaxComments,
+      setAutoSummarize,
+      setShowThumbnails,
+      resetToDefaults: () => {
+        setDarkMode(defaultSettings.darkMode)
+        setApiKey(defaultSettings.apiKey)
+        setSummarizationModel(defaultSettings.summarizationModel)
+        setSummaryLength(defaultSettings.summaryLength)
+        setMaxComments(defaultSettings.maxComments)
+        setAutoSummarize(defaultSettings.autoSummarize)
+        setShowThumbnails(defaultSettings.showThumbnails)
+      }
+    }
   }
 }
