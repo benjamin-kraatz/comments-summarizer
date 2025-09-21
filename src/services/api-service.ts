@@ -49,7 +49,12 @@ async function withRetry<T>(
       }
 
       // Wait before retrying
-      console.warn(`Attempt ${attempt} failed, retrying in ${config.delayMs}ms...`, error)
+      const is404 = error instanceof Error && error.message.includes('HTTP 404')
+      if (is404) {
+        console.log(`Attempt ${attempt} failed with 404, retrying in ${config.delayMs}ms... (This is normal if backend is starting up)`)
+      } else {
+        console.warn(`Attempt ${attempt} failed, retrying in ${config.delayMs}ms...`, error)
+      }
       await new Promise(resolve => setTimeout(resolve, config.delayMs))
     }
   }
@@ -109,6 +114,18 @@ export class ApiService {
           return true // Network errors should be retried
         }
 
+        // Retry on zod parsing errors (malformed backend responses)
+        if (error instanceof Error &&
+            error.message.includes('Error parsing comments response from backend')) {
+          return true
+        }
+
+        // Retry on 404 errors - backend might be temporarily unavailable
+        if (error instanceof Error &&
+            error.message.includes('HTTP 404')) {
+          return true
+        }
+
         return false
       }
     }
@@ -120,6 +137,14 @@ export class ApiService {
         // Handle HTTP error responses
         if (!response.ok) {
           const errorMessage = `HTTP ${response.status}: ${response.statusText}`
+
+          // Log the specific error type for debugging
+          if (response.status === 404) {
+            console.warn(`[API Service] Got 404 - will retry if configured: ${errorMessage}`)
+          } else {
+            console.error(`[API Service] HTTP error: ${errorMessage}`)
+          }
+
           throw new Error(errorMessage)
         }
 
@@ -139,9 +164,22 @@ export class ApiService {
       }, commentsRetryConfig)
     } catch (error) {
       console.error("Error getting comments after all retries:", error)
+
+      // Provide more specific error messages based on the error type
+      let errorMessage = "Error getting comments"
+      if (error instanceof Error) {
+        if (error.message.includes('HTTP 404')) {
+          errorMessage = "Backend API endpoint not found - the server may not be running or the endpoint may not be implemented"
+        } else if (error.message.includes('HTTP 5')) {
+          errorMessage = "Backend server error - please try again later"
+        } else {
+          errorMessage = error.message
+        }
+      }
+
       return {
         type: "error" as const,
-        error: error instanceof Error ? error.message : "Error getting comments"
+        error: errorMessage
       }
     }
   }
