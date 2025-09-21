@@ -3,6 +3,13 @@ import { useEffect, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "./components/ui/select"
 import { Switch } from "./components/ui/switch"
 
 import "./styles.css"
@@ -263,6 +270,24 @@ function IndexPopup() {
               checked={autoSummarize}
               onCheckedChange={setAutoSummarize}
             />
+          </label>
+          <label
+            htmlFor="position"
+            className="flex justify-between items-center text-sm">
+            <span>Position</span>
+            <Select>
+              <SelectTrigger
+                className="max-w-[160px] w-full"
+                disabled={!autoSummarize}>
+                <SelectValue placeholder="Position" id="position" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="below-description">
+                  Below Description
+                </SelectItem>
+                <SelectItem value="above-comments">Above Comments</SelectItem>
+              </SelectContent>
+            </Select>
           </label>
         </CardContent>
       </Card>
