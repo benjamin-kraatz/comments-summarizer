@@ -5,6 +5,7 @@ import { useStorage } from "@plasmohq/storage/hook"
 
 import type { PlasmoGetInlineAnchor } from "~node_modules/plasmo/dist/type"
 
+import { l18n } from "../lib/l18n"
 import { ApiService } from "../services/api-service"
 import type { ToneRating } from "../types/youtube"
 
@@ -305,7 +306,7 @@ const SummaryDisplay = () => {
 
     // Check every 3 seconds when visible
     const pollInterval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         pollForChanges()
       }
     }, 3000)
@@ -357,7 +358,7 @@ const SummaryDisplay = () => {
               animation: "spin 1s linear infinite"
             }}></div>
           <span style={{ fontSize: "14px", color: "#aaa" }}>
-            Loading comments summary...
+            {l18n.loadingCommentsSummary}
           </span>
         </div>
         <style>{`
@@ -401,7 +402,7 @@ const SummaryDisplay = () => {
             <span style={{ fontSize: "16px" }}>⚠️</span>
             <span
               style={{ fontSize: "14px", fontWeight: "500", color: "#fca5a5" }}>
-              Error Loading Comments
+              {l18n.errorLoadingComments}
             </span>
           </div>
           <p style={{ margin: 0, fontSize: "12px", color: "#fca5a5" }}>
@@ -411,13 +412,13 @@ const SummaryDisplay = () => {
             <div
               style={{ marginTop: "8px", fontSize: "11px", color: "#fca5a5" }}>
               <p style={{ margin: 0, marginBottom: "4px" }}>
-                <strong>Possible solutions:</strong>
+                <strong>{l18n.possibleSolutions}:</strong>
               </p>
               <ul style={{ margin: 0, paddingLeft: "16px" }}>
-                <li>Try refreshing the page</li>
-                <li>Try opening the video in a new tab</li>
-                <li>Check if you're in incognito mode</li>
-                <li>The extension may not work in embedded videos</li>
+                <li>{l18n.tryRefreshingThePage}</li>
+                <li>{l18n.tryOpeningTheVideoInANewTab}</li>
+                <li>{l18n.checkIfYoureInIncognitoMode}</li>
+                <li>{l18n.theExtensionMayNotWorkInEmbeddedVideos}</li>
               </ul>
             </div>
           )}
@@ -433,7 +434,7 @@ const SummaryDisplay = () => {
               borderRadius: "4px",
               cursor: "pointer"
             }}>
-            Retry
+            {l18n.retry}
           </button>
         </div>
       </div>
@@ -463,7 +464,7 @@ const SummaryDisplay = () => {
           marginBottom: "8px",
           fontSize: "16px"
         }}>
-        Comments Summary
+        {l18n.commentsSummary}
       </h2>
       <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.4" }}>
         {commentsSummary}
@@ -475,8 +476,8 @@ const SummaryDisplay = () => {
           color: "#aaa",
           marginTop: "14px"
         }}>
-        Summarized by AI. AI can make mistakes &middot; Powered by Comments
-        Summarizer &middot; Made with &hearts; by BNN.
+        {l18n.summarizedByAI} &middot; {l18n.poweredBy}
+        &middot; {l18n.madeWithLoveByBNN}.
       </span>
       {toneRating && (
         <div
@@ -512,7 +513,7 @@ const SummaryDisplay = () => {
                   textTransform: "uppercase",
                   letterSpacing: "0.5px"
                 }}>
-                Tone
+                {l18n.tone}
               </div>
               <div
                 style={{
@@ -578,7 +579,7 @@ const SummaryDisplay = () => {
                   textTransform: "uppercase",
                   letterSpacing: "0.5px"
                 }}>
-                Analysis
+                {l18n.analysis}
               </div>
               <div
                 style={{
@@ -597,9 +598,7 @@ const SummaryDisplay = () => {
                   color: getRatingColor(toneRating.rating),
                   fontWeight: "600"
                 }}>
-                {toneRating.rating.charAt(0).toUpperCase() +
-                  toneRating.rating.slice(1)}{" "}
-                tone detected
+                {mapToneToLabelL18n(toneRating.rating)}
               </div>
             </div>
           </div>
@@ -607,6 +606,23 @@ const SummaryDisplay = () => {
       )}
     </div>
   )
+}
+
+function mapToneToLabelL18n(tone: string) {
+  switch (tone) {
+    case "positive":
+      return l18n.positiveTone
+    case "quite positive":
+      return l18n.quitePositiveTone
+    case "quite negative":
+      return l18n.quiteNegativeTone
+    case "neutral":
+      return l18n.neutralTone
+    case "negative":
+      return l18n.negativeTone
+    default:
+      return l18n.neutralTone
+  }
 }
 
 export const getInlineAnchor: PlasmoGetInlineAnchor = async () => ({

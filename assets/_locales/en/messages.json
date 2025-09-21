@@ -1,0 +1,142 @@
+{
+  "extensionName": {
+    "message": "Comments Summarizer",
+    "description": "Name of the extension."
+  },
+  "extensionDescription": {
+    "message": "Summarize YouTube video comments and sentiment analysis with AI",
+    "description": "Description of the extension."
+  },
+  "extensionClaim": {
+    "message": "AI-powered YouTube comment analysis",
+    "description": "Call to action of the extension."
+  },
+  "popup": {
+    "message": "Logic is the beginning of wisdom, not the end.",
+    "description": "Popup message."
+  },
+  "quickSettings": {
+    "message": "Quick Settings",
+    "description": "Quick settings description."
+  },
+  "quickSettings_enableSummarization": {
+    "message": "Enable Summarization",
+    "description": "Enable summarization description."
+  },
+  "quickSettings_position": {
+    "message": "Position",
+    "description": "Position description."
+  },
+  "quickSettings_position_belowDescription": {
+    "message": "Below Description",
+    "description": "Below description description."
+  },
+  "quickSettings_position_aboveComments": {
+    "message": "Above Comments",
+    "description": "Above comments description."
+  },
+  "reportWrongSummarization": {
+    "message": "Report Wrong Summarization",
+    "description": "Report wrong summarization description."
+  },
+  "reportIssue": {
+    "message": "Report Issue",
+    "description": "Report issue description."
+  },
+  "buyMeACoffee": {
+    "message": "Buy Me a Coffee",
+    "description": "Buy me a coffee description."
+  },
+  "privacyPolicy": {
+    "message": "Privacy Policy",
+    "description": "Privacy policy description."
+  },
+  "termsOfService": {
+    "message": "Terms of Service",
+    "description": "Terms of service description."
+  },
+  "creatorLetstalk": {
+    "message": "Creator? Let's talk!",
+    "description": "Creator let's talk description."
+  },
+  "loadingCommentsSummary": {
+    "message": "Loading comments summary...",
+    "description": "Loading comments summary description."
+  },
+  "errorLoadingComments": {
+    "message": "Error Loading Comments",
+    "description": "Error loading comments description."
+  },
+  "commentsSummary": {
+    "message": "Comments Summary",
+    "description": "Comments summary description."
+  },
+  "summarizedByAI": {
+    "message": "Summarized by AI. AI can make mistakes",
+    "description": "Summarized by AI description."
+  },
+  "tone": {
+    "message": "Tone",
+    "description": "Tone description."
+  },
+  "analysis": {
+    "message": "Analysis",
+    "description": "Analysis description."
+  },
+  "toneDetected": {
+    "message": "Tone detected",
+    "description": "Tone detected description."
+  },
+  "retry": {
+    "message": "Retry",
+    "description": "Retry description."
+  },
+  "possibleSolutions": {
+    "message": "Possible solutions",
+    "description": "Possible solutions description."
+  },
+  "tryRefreshingThePage": {
+    "message": "Try refreshing the page",
+    "description": "Try refreshing the page description."
+  },
+  "tryOpeningTheVideoInANewTab": {
+    "message": "Try opening the video in a new tab",
+    "description": "Try opening the video in a new tab description."
+  },
+  "checkIfYoureInIncognitoMode": {
+    "message": "Check if you're in incognito mode",
+    "description": "Check if you're in incognito mode description."
+  },
+  "theExtensionMayNotWorkInEmbeddedVideos": {
+    "message": "The extension may not work in embedded videos",
+    "description": "The extension may not work in embedded videos description."
+  },
+  "poweredBy": {
+    "message": "Powered by Comments Summarizer",
+    "description": "Powered by Comments Summarizer description."
+  },
+  "madeWithLoveByBNN": {
+    "message": "Made with Love by BNN",
+    "description": "Made with love by BNN description."
+  },
+  "positiveTone": {
+    "message": "Overly Positive Tone",
+    "description": "Positive description."
+  },
+  "quitePositiveTone": {
+    "message": "Quite Positive Tone",
+    "description": "Quite Positive description."
+  },
+  "quiteNegativeTone": {
+    "message": "Quite Negative Tone",
+    "description": "Quite Negative description."
+  },
+  "neutralTone": {
+    "message": "Neutral Tone",
+    "description": "Neutral description."
+  },
+  "negativeTone": {
+    "message": "Overly Negative Tone",
+    "description": "Negative description."
+  }
+}

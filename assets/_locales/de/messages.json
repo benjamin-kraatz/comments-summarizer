@@ -1,0 +1,142 @@
+{
+  "extensionName": {
+    "message": "Comments Summarizer",
+    "description": "Name der Erweiterung."
+  },
+  "extensionDescription": {
+    "message": "Zusammenfassung und Stimmungsanalyse von YouTube-Kommentaren mit KI",
+    "description": "Beschreibung der Erweiterung."
+  },
+  "extensionClaim": {
+    "message": "KI-gestützte YouTube-Kommentaranalyse",
+    "description": "Ansprechschluss der Erweiterung."
+  },
+  "popup": {
+    "message": "Logik ist der Beginn der Weisheit, nicht das Ende.",
+    "description": "Popup Nachricht."
+  },
+  "quickSettings": {
+    "message": "Schnelleinstellungen",
+    "description": "Quick settings description."
+  },
+  "quickSettings_enableSummarization": {
+    "message": "Zus.fassung aktivieren",
+    "description": "Enable summarization description."
+  },
+  "quickSettings_position": {
+    "message": "Position",
+    "description": "Position description."
+  },
+  "quickSettings_position_belowDescription": {
+    "message": "Beschreibung",
+    "description": "Below description description."
+  },
+  "quickSettings_position_aboveComments": {
+    "message": "Kommentare",
+    "description": "Above comments description."
+  },
+  "reportWrongSummarization": {
+    "message": "Falsche Zusammenfassung melden",
+    "description": "Report wrong summarization description."
+  },
+  "reportIssue": {
+    "message": "Problem melden",
+    "description": "Report issue description."
+  },
+  "buyMeACoffee": {
+    "message": "Kauf' mir 'nen Kaffee",
+    "description": "Buy me a coffee description."
+  },
+  "privacyPolicy": {
+    "message": "Datenschutzrichtlinie",
+    "description": "Privacy policy description."
+  },
+  "termsOfService": {
+    "message": "Nutzungsbedingungen",
+    "description": "Terms of service description."
+  },
+  "creatorLetstalk": {
+    "message": "Content Creator? Lass' uns chatten!",
+    "description": "Creator let's talk description."
+  },
+  "loadingCommentsSummary": {
+    "message": "Kommentare zusammenfassen...",
+    "description": "Loading comments summary description."
+  },
+  "errorLoadingComments": {
+    "message": "Fehler beim Laden der Kommentare",
+    "description": "Error loading comments description."
+  },
+  "commentsSummary": {
+    "message": "Zusammenfassung der Kommentare",
+    "description": "Comments summary description."
+  },
+  "summarizedByAI": {
+    "message": "Von KI zusammengefasst. KI kann Fehler machen",
+    "description": "Summarized by AI description."
+  },
+  "tone": {
+    "message": "Stimmung",
+    "description": "Tone description."
+  },
+  "analysis": {
+    "message": "Analyse",
+    "description": "Analysis description."
+  },
+  "toneDetected": {
+    "message": "Stimmung",
+    "description": "Tone detected description."
+  },
+  "retry": {
+    "message": "Wiederholen",
+    "description": "Retry description."
+  },
+  "possibleSolutions": {
+    "message": "Mögliche Lösungen",
+    "description": "Possible solutions description."
+  },
+  "tryRefreshingThePage": {
+    "message": "Seite neu laden.",
+    "description": "Try refreshing the page description."
+  },
+  "tryOpeningTheVideoInANewTab": {
+    "message": "Video in neuem Tab öffnen.",
+    "description": "Try opening the video in a new tab description."
+  },
+  "checkIfYoureInIncognitoMode": {
+    "message": "Überprüfen, ob du im Incognito-Modus bist.",
+    "description": "Check if you're in incognito mode description."
+  },
+  "theExtensionMayNotWorkInEmbeddedVideos": {
+    "message": "Die Erweiterung funktioniert möglicherweise nicht in eingebetteten Videos.",
+    "description": "The extension may not work in embedded videos description."
+  },
+  "poweredBy": {
+    "message": "Powered by Comments Summarizer",
+    "description": "Powered by Comments Summarizer description."
+  },
+  "madeWithLoveByBNN": {
+    "message": "Gemacht mit Liebe von BNN",
+    "description": "Made with love by BNN description."
+  },
+  "positiveTone": {
+    "message": "Überaus positive Stimmung",
+    "description": "Positive description."
+  },
+  "quitePositiveTone": {
+    "message": "Durchaus positive Stimmung",
+    "description": "Quite Positive description."
+  },
+  "quiteNegativeTone": {
+    "message": "Durchaus negative Stimmung",
+    "description": "Quite Negative description."
+  },
+  "neutralTone": {
+    "message": "Neutrale Stimmung",
+    "description": "Neutral description."
+  },
+  "negativeTone": {
+    "message": "Überaus negative Stimmung",
+    "description": "Negative description."
+  }
+}

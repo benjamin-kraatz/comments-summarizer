@@ -14,6 +14,7 @@ import { Switch } from "./components/ui/switch"
 
 import "./styles.css"
 
+import { l18n } from "./lib/l18n"
 import { cn } from "./lib/utils"
 
 function IndexPopup() {
@@ -140,131 +141,23 @@ function IndexPopup() {
           </div>
         </div>
         <h2 className="text-xl font-bold mb-1 bg-gradient-to-r from-primary to-[#abc123] bg-clip-text text-transparent">
-          Comments Summarizer
+          {l18n.extensionName}
         </h2>
-        <p className="text-sm text-muted-foreground">
-          AI-powered YouTube comment analysis
-        </p>
+        <p className="text-sm text-muted-foreground">{l18n.extensionClaim}</p>
       </div>
-
-      {/* Current Video Status */}
-      {/* <div
-        className={`mb-4 p-4 rounded-lg border transition-colors ${
-          darkMode
-            ? "bg-gray-800 border-gray-700"
-            : "bg-gray-50 border-gray-200"
-        }`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            {isYouTubeVideo ? (
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            ) : (
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-            )}
-            <span
-              className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
-              Current Video
-            </span>
-          </div>
-          <button
-            onClick={handleRefresh}
-            className={`p-1 rounded-full transition-colors ${
-              darkMode
-                ? "hover:bg-gray-700 text-gray-400"
-                : "hover:bg-gray-200 text-gray-600"
-            }`}
-            title="Refresh current tab">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <h3
-              className={`text-sm font-semibold mb-1 ${darkMode ? "text-gray-200" : "text-gray-800"}`}>
-              {videoTitle}
-            </h3>
-          </div>
-
-          {isYouTubeVideo && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span
-                  className={`text-xs ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-                  Auto-summarization active
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    autoSummarize
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                  }`}>
-                  {autoSummarize ? "ON" : "OFF"}
-                </span>
-                <button
-                  onClick={toggleAutoSummarize}
-                  className={`p-1 rounded text-xs transition-colors ${
-                    darkMode
-                      ? "hover:bg-gray-700 text-gray-400"
-                      : "hover:bg-gray-200 text-gray-600"
-                  }`}
-                  title="Toggle auto-summarization">
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center mt-3">
-          <span
-            className={`px-2 py-1 text-xs rounded-full ${
-              isYouTubeVideo
-                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-            }`}>
-            {isYouTubeVideo ? "✓ YouTube Video" : "⚠ Not YouTube"}
-          </span>
-        </div>
-      </div> */}
 
       {/* Quick Settings Overview */}
       <Card className="mb-4 p-0 flex flex-col gap-2">
         <CardHeader className="px-4 pt-3 pb-0">
           <CardTitle className="font-bold text-base p-0">
-            Quick Settings
+            {l18n.quickSettings.title}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-3 pt-0 flex flex-col gap-2">
           <label
             htmlFor="auto-summarize"
             className="flex justify-between items-center text-sm">
-            <span>Enable Summarization</span>
+            <span>{l18n.quickSettings.enableSummarization}</span>
             <Switch
               id="auto-summarize"
               checked={autoSummarize}
@@ -274,7 +167,7 @@ function IndexPopup() {
           <label
             htmlFor="position"
             className="flex justify-between items-center text-sm">
-            <span>Position</span>
+            <span>{l18n.quickSettings.position.title}</span>
             <Select defaultValue="below-description">
               <SelectTrigger
                 className="max-w-[160px] w-full"
@@ -283,9 +176,11 @@ function IndexPopup() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="below-description">
-                  Below Description
+                  {l18n.quickSettings.position.belowDescription}
                 </SelectItem>
-                <SelectItem value="above-comments">Above Comments</SelectItem>
+                <SelectItem value="above-comments">
+                  {l18n.quickSettings.position.aboveComments}
+                </SelectItem>
               </SelectContent>
             </Select>
           </label>
@@ -296,10 +191,10 @@ function IndexPopup() {
 
           <div className="flex flex-col gap-1">
             <button className="flex items-center py-1 rounded-lg transition-colors text-primary hover:text-secondary">
-              <span>Report a wrong summarization</span>
+              <span>{l18n.reportWrongSummarization}</span>
             </button>
             <button className="flex items-center py-1 rounded-lg transition-colors text-primary hover:text-secondary">
-              <span>Report an issue</span>
+              <span>{l18n.reportIssue}</span>
             </button>
           </div>
         </CardContent>
@@ -382,7 +277,7 @@ function IndexPopup() {
                 opacity="0.5"
               />
             </svg>
-            <span>Buy me a coffee</span>
+            <span>{l18n.buyMeACoffee}</span>
           </a>
 
           <button
@@ -515,7 +410,7 @@ function IndexPopup() {
               d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          <span>Creator? Let's talk!</span>
+          <span>{l18n.creatorLetstalk}</span>
         </button>
       </div>
 
@@ -530,7 +425,7 @@ function IndexPopup() {
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-muted-foreground hover:text-primary hover:underline">
-            Privacy Policy
+            {l18n.privacyPolicy}
           </a>
           <span className="text-xs text-muted-foreground">&middot;</span>
           <a
@@ -538,7 +433,7 @@ function IndexPopup() {
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-muted-foreground hover:text-primary hover:underline">
-            Terms of Service
+            {l18n.termsOfService}
           </a>
         </div>
       </div>

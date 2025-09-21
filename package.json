@@ -1,8 +1,8 @@
 {
   "name": "comments-summarizer",
-  "displayName": "Comments summarizer",
+  "displayName": "__MSG_extensionName__",
   "version": "0.0.1",
-  "description": "Summarize YouTube video comments",
+  "description": "__MSG_extensionDescription__",
   "author": "BNN <bnn@cnn.com>",
   "scripts": {
     "dev": "plasmo dev",
@@ -37,9 +37,11 @@
     "typescript": "5.3.3"
   },
   "manifest": {
+    "name": "__MSG_extensionName__",
     "host_permissions": [
       "https://*/*"
-    ]
+    ],
+    "default_locale": "en"
   },
   "packageManager": "pnpm@10.7.1+sha512.2d92c86b7928dc8284f53494fb4201f983da65f0fb4f0d40baafa5cf628fa31dae3e5968f12466f17df7e97310e30f343a648baea1b9b350685dafafffdf5808"
 }
