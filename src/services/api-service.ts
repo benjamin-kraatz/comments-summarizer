@@ -97,7 +97,7 @@ type CommentsResponse = z.infer<typeof commentsResponseSchema>
  * - Without proper CORS headers, the browser blocks cross-origin requests for security
  */
 export class ApiService {
-  private static readonly API_URL = "https://cs.bnndv.qzz.io" //"http://localhost:8787"
+  private static readonly API_URL = "http://localhost:8787" // "https://cs.bnndv.qzz.io"
 
   /**
    * Fetches comments for a YouTube video with automatic retry logic
