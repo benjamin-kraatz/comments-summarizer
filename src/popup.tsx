@@ -184,6 +184,17 @@ function IndexPopup() {
               </SelectContent>
             </Select>
           </label>
+          <label
+            htmlFor="p14n"
+            className="flex justify-between items-center text-sm">
+            <div className="flex flex-col items-start">
+              <span>{l18n.quickSettings.enableP15}</span>
+              <span className="text-xs text-muted-foreground">
+                {l18n.quickSettings.enableP15Description}
+              </span>
+            </div>
+            <Switch id="p14n" disabled />
+          </label>
 
           <div className="my-2">
             <div className="border-b border-border h-1" />

@@ -138,5 +138,13 @@
   "negativeTone": {
     "message": "Overly Negative Tone",
     "description": "Negative description."
+  },
+  "enableP15": {
+    "message": "Enable Personalization",
+    "description": "Label for personalization."
+  },
+  "enableP15Description": {
+    "message": "Not yet available - soon™",
+    "description": "Description for personalization settings."
   }
 }

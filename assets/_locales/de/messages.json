@@ -138,5 +138,13 @@
   "negativeTone": {
     "message": "Überaus negative Stimmung",
     "description": "Negative description."
+  },
+  "enableP15": {
+    "message": "Personalisierung",
+    "description": "Label for personalization."
+  },
+  "enableP15Description": {
+    "message": "Noch nicht verfügbar - bald™",
+    "description": "Description for personalization settings."
   }
 }

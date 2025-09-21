@@ -20,7 +20,9 @@ export const l18n = {
       aboveComments: chrome.i18n.getMessage(
         "quickSettings_position_aboveComments"
       )
-    }
+    },
+    enableP15: chrome.i18n.getMessage("enableP15"),
+    enableP15Description: chrome.i18n.getMessage("enableP15Description")
   },
   reportWrongSummarization: chrome.i18n.getMessage("reportWrongSummarization"),
   reportIssue: chrome.i18n.getMessage("reportIssue"),
@@ -53,5 +55,5 @@ export const l18n = {
   quitePositiveTone: chrome.i18n.getMessage("quitePositiveTone"),
   quiteNegativeTone: chrome.i18n.getMessage("quiteNegativeTone"),
   neutralTone: chrome.i18n.getMessage("neutralTone"),
-  negativeTone: chrome.i18n.getMessage("negativeTone")
+  negativeTone: chrome.i18n.getMessage("negativeTone"),
 }
