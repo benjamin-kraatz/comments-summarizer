@@ -275,7 +275,7 @@ function IndexPopup() {
             htmlFor="position"
             className="flex justify-between items-center text-sm">
             <span>Position</span>
-            <Select>
+            <Select defaultValue="below-description">
               <SelectTrigger
                 className="max-w-[160px] w-full"
                 disabled={!autoSummarize}>
@@ -290,7 +290,11 @@ function IndexPopup() {
             </Select>
           </label>
 
-          <div className="mt-1 flex flex-col gap-1">
+          <div className="my-2">
+            <div className="border-b border-border h-1" />
+          </div>
+
+          <div className="flex flex-col gap-1">
             <button className="flex items-center py-1 rounded-lg transition-colors text-primary hover:text-secondary">
               <span>Report a wrong summarization</span>
             </button>
