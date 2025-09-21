@@ -9,14 +9,16 @@ export interface RetryConfig {
 
 // Default retry configuration - can be imported and customized by other modules
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
-  maxAttempts: 5,
-  delayMs: 2000, // 2 seconds
+  maxAttempts: 6,
+  delayMs: 3000, // 3 seconds
   retryableErrors: (error: any) => {
     // Retry on network errors, timeouts, and 5xx server errors
-    if (error instanceof TypeError && error.message.includes('fetch')) return true
+    if (error instanceof TypeError && error.message.includes("fetch"))
+      return true
     if (error instanceof Error) {
       const message = error.message.toLowerCase()
-      if (message.includes('timeout') || message.includes('network')) return true
+      if (message.includes("timeout") || message.includes("network"))
+        return true
     }
     return false
   }
@@ -49,13 +51,18 @@ async function withRetry<T>(
       }
 
       // Wait before retrying
-      const is404 = error instanceof Error && error.message.includes('HTTP 404')
+      const is404 = error instanceof Error && error.message.includes("HTTP 404")
       if (is404) {
-        console.log(`Attempt ${attempt} failed with 404, retrying in ${config.delayMs}ms... (This is normal if backend is starting up)`)
+        console.log(
+          `Attempt ${attempt} failed with 404, retrying in ${config.delayMs}ms... (This is normal if backend is starting up)`
+        )
       } else {
-        console.warn(`Attempt ${attempt} failed, retrying in ${config.delayMs}ms...`, error)
+        console.warn(
+          `Attempt ${attempt} failed, retrying in ${config.delayMs}ms...`,
+          error
+        )
       }
-      await new Promise(resolve => setTimeout(resolve, config.delayMs))
+      await new Promise((resolve) => setTimeout(resolve, config.delayMs))
     }
   }
 
@@ -90,7 +97,7 @@ type CommentsResponse = z.infer<typeof commentsResponseSchema>
  * - Without proper CORS headers, the browser blocks cross-origin requests for security
  */
 export class ApiService {
-  private static readonly API_URL = "http://localhost:8787"
+  private static readonly API_URL = "https://cs.bnndv.qzz.io" //"http://localhost:8787"
 
   /**
    * Fetches comments for a YouTube video with automatic retry logic
@@ -109,7 +116,10 @@ export class ApiService {
    *   delayMs: 1000
    * })
    */
-  public static async getComments(videoId: string, retryConfig?: Partial<RetryConfig>) {
+  public static async getComments(
+    videoId: string,
+    retryConfig?: Partial<RetryConfig>
+  ) {
     // Custom retry config for getComments method
     const commentsRetryConfig: RetryConfig = {
       ...DEFAULT_RETRY_CONFIG,
@@ -119,19 +129,20 @@ export class ApiService {
         if (DEFAULT_RETRY_CONFIG.retryableErrors!(error)) return true
 
         // Also retry on specific HTTP status codes (4xx are client errors, don't retry)
-        if (error instanceof Error && error.message.includes('fetch')) {
+        if (error instanceof Error && error.message.includes("fetch")) {
           return true // Network errors should be retried
         }
 
         // Retry on zod parsing errors (malformed backend responses)
-        if (error instanceof Error &&
-            error.message.includes('Error parsing comments response from backend')) {
+        if (
+          error instanceof Error &&
+          error.message.includes("Error parsing comments response from backend")
+        ) {
           return true
         }
 
         // Retry on 404 errors - backend might be temporarily unavailable
-        if (error instanceof Error &&
-            error.message.includes('HTTP 404')) {
+        if (error instanceof Error && error.message.includes("HTTP 404")) {
           return true
         }
 
@@ -146,10 +157,14 @@ export class ApiService {
 
         // Check if server is reachable first
         try {
-          const testResponse = await fetch(this.API_URL, { method: 'HEAD' })
-          console.log(`[API Service] Server reachability test: ${testResponse.status}`)
+          const testResponse = await fetch(this.API_URL, { method: "HEAD" })
+          console.log(
+            `[API Service] Server reachability test: ${testResponse.status}`
+          )
           if (!testResponse.ok) {
-            throw new Error(`Server not reachable: ${testResponse.status} ${testResponse.statusText}`)
+            throw new Error(
+              `Server not reachable: ${testResponse.status} ${testResponse.statusText}`
+            )
           }
         } catch (error) {
           console.warn(`[API Service] Server reachability test failed:`, error)
@@ -157,15 +172,22 @@ export class ApiService {
 
         const response = await fetch(requestUrl)
 
-        console.log(`[API Service] Response status: ${response.status} ${response.statusText}`)
-        console.log(`[API Service] Response headers:`, Object.fromEntries(response.headers.entries()))
+        console.log(
+          `[API Service] Response status: ${response.status} ${response.statusText}`
+        )
+        console.log(
+          `[API Service] Response headers:`,
+          Object.fromEntries(response.headers.entries())
+        )
 
         // Check if response has a body
-        const contentLength = response.headers.get('content-length')
+        const contentLength = response.headers.get("content-length")
         console.log(`[API Service] Content-Length: ${contentLength}`)
 
-        if (contentLength === '0') {
-          console.warn(`[API Service] Response has empty body (Content-Length: 0)`)
+        if (contentLength === "0") {
+          console.warn(
+            `[API Service] Response has empty body (Content-Length: 0)`
+          )
           throw new Error("Server returned empty response")
         }
 
@@ -175,7 +197,9 @@ export class ApiService {
 
           // Log the specific error type for debugging
           if (response.status === 404) {
-            console.warn(`[API Service] Got 404 - will retry if configured: ${errorMessage}`)
+            console.warn(
+              `[API Service] Got 404 - will retry if configured: ${errorMessage}`
+            )
           } else {
             console.error(`[API Service] HTTP error: ${errorMessage}`)
           }
@@ -189,18 +213,34 @@ export class ApiService {
         try {
           bodyText = await response.text()
           console.log(`[API Service] Response body length: ${bodyText.length}`)
-          console.log(`[API Service] Response body (first 500 chars):`, bodyText.substring(0, 500))
+          console.log(
+            `[API Service] Response body (first 500 chars):`,
+            bodyText.substring(0, 500)
+          )
 
           // Check if response looks like valid JSON
-          if (bodyText.trim().startsWith('{') && bodyText.trim().endsWith('}')) {
+          if (
+            bodyText.trim().startsWith("{") &&
+            bodyText.trim().endsWith("}")
+          ) {
             console.log(`[API Service] Response appears to be valid JSON`)
           } else {
-            console.warn(`[API Service] Response doesn't look like JSON:`, bodyText.substring(0, 100))
+            console.warn(
+              `[API Service] Response doesn't look like JSON:`,
+              bodyText.substring(0, 100)
+            )
 
             // Check if this looks like an HTML error page
-            if (bodyText.toLowerCase().includes('<!doctype html>') || bodyText.toLowerCase().includes('<html')) {
-              console.error(`[API Service] Server returned HTML instead of JSON - server might be down or returning an error page`)
-              throw new Error("Server returned HTML error page instead of JSON response")
+            if (
+              bodyText.toLowerCase().includes("<!doctype html>") ||
+              bodyText.toLowerCase().includes("<html")
+            ) {
+              console.error(
+                `[API Service] Server returned HTML instead of JSON - server might be down or returning an error page`
+              )
+              throw new Error(
+                "Server returned HTML error page instead of JSON response"
+              )
             }
           }
         } catch (error) {
@@ -214,15 +254,22 @@ export class ApiService {
         } catch (error) {
           console.error("[API Service] Error parsing JSON response:", error)
           console.error("[API Service] Raw response text:", bodyText)
-          throw new Error(`Invalid JSON response from server: ${error instanceof Error ? error.message : 'Unknown JSON error'}`)
+          throw new Error(
+            `Invalid JSON response from server: ${error instanceof Error ? error.message : "Unknown JSON error"}`
+          )
         }
 
         const parsed = commentsResponseSchema.safeParse(bodyData)
 
         if (!parsed.success) {
-          console.error("[API Service] Error validating response schema:", parsed.error)
+          console.error(
+            "[API Service] Error validating response schema:",
+            parsed.error
+          )
           console.error("[API Service] Received data:", bodyData)
-          throw new Error(`Error parsing comments response from backend: ${parsed.error.message}`)
+          throw new Error(
+            `Error parsing comments response from backend: ${parsed.error.message}`
+          )
         }
 
         return {
@@ -237,9 +284,10 @@ export class ApiService {
       // Provide more specific error messages based on the error type
       let errorMessage = "Error getting comments"
       if (error instanceof Error) {
-        if (error.message.includes('HTTP 404')) {
-          errorMessage = "Backend API endpoint not found - the server may not be running or the endpoint may not be implemented"
-        } else if (error.message.includes('HTTP 5')) {
+        if (error.message.includes("HTTP 404")) {
+          errorMessage =
+            "Backend API endpoint not found - the server may not be running or the endpoint may not be implemented"
+        } else if (error.message.includes("HTTP 5")) {
           errorMessage = "Backend server error - please try again later"
         } else {
           errorMessage = error.message
