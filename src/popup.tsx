@@ -51,7 +51,8 @@ function IndexPopup() {
         tabId,
         {
           action: "getCommentsSummary",
-          commentsSummary: apiResponse.comments
+          commentsSummary: apiResponse.comments,
+          toneRating: apiResponse.toneRating
         },
         (response) => {
           console.log(
